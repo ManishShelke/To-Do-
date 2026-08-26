@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "UserProfile": {
+      "collection": "users",
+      "fields": {
+        "fullName": { "type": "string", "description": "Full name of the student" },
+        "email": { "type": "string", "description": "Email address" },
+        "bio": { "type": "string", "description": "Academic bio and goals" },
+        "memberSince": { "type": "string", "description": "Membership join date string" },
+        "avatarUrl": { "type": "string", "description": "Avatar image URL or photo" },
+        "lifetimeTasksCompleted": { "type": "number", "description": "Total tasks completed" },
+        "lifetimeActivitiesLogged": { "type": "number", "description": "Total activities logged" },
+        "dailyGoalHours": { "type": "number", "description": "Daily target hours" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      }
+    },
+    "Task": {
+      "collection": "users/{userId}/tasks",
+      "fields": {
+        "title": { "type": "string", "description": "Title of the task" },
+        "category": { "type": "string", "description": "study, coding, assignment, project, personal, other" },
+        "priority": { "type": "string", "description": "high, medium, low, none" },
+        "dueDate": { "type": "string", "description": "Display due date formatted string" },
+        "dueDateRaw": { "type": "string", "description": "Raw ISO datetime string" },
+        "completed": { "type": "boolean", "description": "Task completion flag" },
+        "notes": { "type": "string", "description": "Optional notes or details" },
+        "subjectTag": { "type": "string", "description": "Category or subject tag" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "createdAt": { "type": "string", "description": "Creation ISO date" },
+        "completedAt": { "type": "string", "description": "Completion ISO date" }
+      }
+    },
+    "ActivityLog": {
+      "collection": "users/{userId}/activities",
+      "fields": {
+        "title": { "type": "string", "description": "Activity title" },
+        "category": { "type": "string", "description": "study, coding, reading, break" },
+        "durationMinutes": { "type": "number", "description": "Duration in minutes" },
+        "durationFormatted": { "type": "string", "description": "Formatted duration string" },
+        "timestamp": { "type": "string", "description": "Time display string" },
+        "date": { "type": "string", "description": "YYYY-MM-DD date" },
+        "note": { "type": "string", "description": "Optional note" },
+        "completed": { "type": "boolean", "description": "Status flag" },
+        "userId": { "type": "string", "description": "Owner user UID" },
+        "createdAt": { "type": "string", "description": "Creation ISO date" }
+      }
+    }
+  }
+}

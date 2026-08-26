@@ -1,0 +1,6 @@
+{
+  "name": "StudentFlow",
+  "description": "Academic excellence platform for student task management, daily activity tracking, and productivity analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
