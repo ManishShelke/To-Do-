@@ -3,16 +3,16 @@ import { useApp } from '../../context/AppContext';
 import { TopHeader } from '../TopHeader';
 
 export const ProfileScreen: React.FC = () => {
-  const { profile, updateProfile, showNotificationToast, currentUser, tasks, activities, logout } = useApp();
+  const { profile, updateProfile, currentUser, tasks, activities, logout } = useApp();
   const [fullName, setFullName] = useState(profile.fullName || currentUser?.displayName || '');
-  const [email] = useState(profile.email || currentUser?.email || '');
+  const [email, setEmail] = useState(profile.email || currentUser?.email || '');
   const [bio, setBio] = useState(profile.bio || '');
   const [major, setMajor] = useState(profile.major || '');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sync local state when profile loads/changes from Firestore
   useEffect(() => {
     setFullName(profile.fullName || currentUser?.displayName || '');
+    setEmail(profile.email || currentUser?.email || '');
     setBio(profile.bio || '');
     setMajor(profile.major || '');
   }, [profile, currentUser]);
@@ -24,6 +24,7 @@ export const ProfileScreen: React.FC = () => {
     setIsSaving(true);
     await updateProfile({
       fullName: fullName.trim(),
+      email: email.trim(),
       bio: bio.trim(),
       major: major.trim(),
     });
@@ -31,30 +32,29 @@ export const ProfileScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#120303] text-[#FFFACD]">
+    <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111808] text-[#FFF0BA]">
       <TopHeader title="Scholar Profile" />
 
-      <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8 max-w-[1200px] mx-auto w-full pb-20 space-y-8 font-syne">
+      <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8 max-w-[1200px] mx-auto w-full pb-20 space-y-8">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] uppercase tracking-[0.25em] text-[#FFFACD]/60 font-bold">Academic Identity</span>
-            <span className="w-2 h-2 rounded-full bg-[#B81104]"></span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-serif font-normal text-[#FFFACD] tracking-wide">
+          <p className="text-xs font-medium text-[#FFF0BA]/65 mb-1">
+            Academic Identity
+          </p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#FFF0BA] tracking-tight">
             Account & Profile
-          </h2>
-          <p className="text-xs sm:text-sm text-[#FFFACD]/60 max-w-2xl mt-1 tracking-wide">
-            Manage your personal academic identity and cloud synchronization parameters.
+          </h1>
+          <p className="text-xs sm:text-sm text-[#FFF0BA]/70 max-w-2xl mt-1">
+            Manage your personal academic profile, specialization, and study goals.
           </p>
         </div>
 
-        {/* Bento Grid */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Avatar Card & Milestones */}
           <div className="lg:col-span-4 flex flex-col gap-6">
             {/* Avatar Card */}
-            <div className="bg-[#1C0606] border border-[#FFFACD]/15 rounded-2xl p-6 shadow-2xl flex flex-col items-center text-center relative overflow-hidden">
-              <div className="w-full h-20 bg-gradient-to-r from-[#B81104]/30 via-[#B81104]/50 to-[#B81104]/30 absolute top-0 left-0 border-b border-[#FFFACD]/15"></div>
+            <div className="bg-[#18220C] border border-[#FFF0BA]/15 rounded-2xl p-6 flex flex-col items-center text-center relative overflow-hidden">
+              <div className="w-full h-20 bg-[#FFF0BA] absolute top-0 left-0"></div>
 
               <div className="relative mt-6 mb-4">
                 {profile.avatarUrl ? (
@@ -62,10 +62,10 @@ export const ProfileScreen: React.FC = () => {
                     src={profile.avatarUrl}
                     alt={profile.fullName}
                     referrerPolicy="no-referrer"
-                    className="w-24 h-24 rounded-full border-4 border-[#1C0606] object-cover shadow-2xl"
+                    className="w-24 h-24 rounded-full border-4 border-[#18220C] object-cover shadow-xl"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#B81104] to-[#8E0D03] text-[#FFFACD] flex items-center justify-center text-3xl font-serif border-4 border-[#1C0606] shadow-2xl">
+                  <div className="w-24 h-24 rounded-full bg-[#111808] text-[#FFF0BA] flex items-center justify-center text-2xl font-bold border-4 border-[#18220C] shadow-xl">
                     {fullName
                       ? fullName
                           .split(' ')
@@ -77,112 +77,114 @@ export const ProfileScreen: React.FC = () => {
                 )}
               </div>
 
-              <h3 className="text-xl font-serif text-[#FFFACD] tracking-wide font-normal">{fullName || 'Scholar'}</h3>
-              <p className="text-xs font-mono text-[#FFFACD]/50 mt-0.5">{email}</p>
-              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFFACD]/10 border border-[#FFFACD]/20 text-[#FFFACD] text-xs font-mono">
-                <span className="material-symbols-outlined text-[14px] text-[#B81104]">school</span>
-                {major}
-              </div>
+              <h2 className="text-xl font-bold text-[#FFF0BA] tracking-tight">{fullName || 'Scholar'}</h2>
+              <p className="text-xs font-mono text-[#FFF0BA]/65 mt-0.5">{email}</p>
+              {major && (
+                <p className="mt-2 text-xs text-[#FFF0BA]/80">
+                  {major}
+                </p>
+              )}
 
-              <div className="w-full border-t border-[#FFFACD]/15 mt-6 pt-4 text-left">
-                <div className="flex justify-between text-xs text-[#FFFACD]/50 font-mono">
-                  <span>Cloud Auth Provider</span>
-                  <span className="text-[#FFFACD] font-bold">
-                    {currentUser?.providerData?.[0]?.providerId === 'google.com' ? 'Google OAuth' : 'Firebase Email'}
-                  </span>
+              <div className="w-full border-t border-[#FFF0BA]/15 mt-6 pt-4 text-left">
+                <div className="flex justify-between text-xs text-[#FFF0BA]/65 font-mono">
+                  <span>Member Since</span>
+                  <span className="text-[#FFF0BA] font-bold">{profile.memberSince}</span>
                 </div>
               </div>
             </div>
 
             {/* Academic Milestones */}
-            <div className="bg-[#1C0606] border border-[#FFFACD]/15 rounded-2xl p-5 shadow-2xl">
-              <h4 className="text-[11px] font-semibold text-[#FFFACD]/60 uppercase tracking-widest mb-4">
-                Live Cloud Records
-              </h4>
+            <div className="bg-[#18220C] border border-[#FFF0BA]/15 rounded-2xl p-5">
+              <h3 className="text-xs font-semibold text-[#FFF0BA]/75 mb-4">
+                Workspace Milestones
+              </h3>
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#140303] p-3.5 rounded-xl border border-[#FFFACD]/10 text-center">
-                  <span className="material-symbols-outlined text-[#B81104] text-lg mb-1">checklist</span>
-                  <div className="text-xl font-mono text-[#FFFACD] font-bold">{completedCount}</div>
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-[#FFFACD]/40">Completed</span>
+                <div className="bg-[#111808] p-4 rounded-xl border border-[#FFF0BA]/15 text-center">
+                  <div className="text-2xl font-mono text-[#FFF0BA] font-bold tabular-nums">{completedCount}</div>
+                  <span className="text-xs text-[#FFF0BA]/65 mt-1 block">Tasks Done</span>
                 </div>
 
-                <div className="bg-[#140303] p-3.5 rounded-xl border border-[#FFFACD]/10 text-center">
-                  <span className="material-symbols-outlined text-[#B81104] text-lg mb-1">pending_actions</span>
-                  <div className="text-xl font-mono text-[#FFFACD] font-bold">{activities.length}</div>
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-[#FFFACD]/40">Sessions</span>
+                <div className="bg-[#111808] p-4 rounded-xl border border-[#FFF0BA]/15 text-center">
+                  <div className="text-2xl font-mono text-[#FFF0BA] font-bold tabular-nums">{activities.length}</div>
+                  <span className="text-xs text-[#FFF0BA]/65 mt-1 block">Study Sessions</span>
                 </div>
               </div>
             </div>
 
-            {/* Lemon Chiffon Badge */}
-            <div className="bg-[#FFFACD] text-[#120303] rounded-2xl p-5 border border-[#B81104]/20 shadow-2xl flex items-center justify-between">
+            {/* Colonial White Card */}
+            <div className="bg-[#FFF0BA] text-[#111808] rounded-2xl p-5 border border-[#111808]/15 shadow-xl flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#B81104]">Membership Tier</span>
-                <h5 className="font-serif text-lg text-[#B81104] font-normal">Milano Academic Fellow</h5>
+                <span className="text-xs font-bold text-[#111808]/70">Academic Status</span>
+                <h4 className="text-lg font-bold text-[#111808]">Honor Roll Scholar</h4>
               </div>
-              <span className="material-symbols-outlined text-[#B81104] text-[28px]">verified</span>
+              <span className="material-symbols-outlined text-[#111808] text-[28px]">verified</span>
             </div>
           </div>
 
-          {/* Right Column: Information & Security Forms */}
+          {/* Right Column: Information & Session Controls */}
           <div className="lg:col-span-8 flex flex-col gap-6">
             {/* Profile Information Form */}
-            <div className="bg-[#1C0606] border border-[#FFFACD]/15 rounded-2xl p-6 shadow-2xl">
-              <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-[#FFFACD]/15">
-                <span className="material-symbols-outlined text-[#B81104]">badge</span>
-                <h3 className="text-lg font-serif text-[#FFFACD] tracking-wide font-normal">Personal Information</h3>
+            <div className="bg-[#18220C] border border-[#FFF0BA]/15 rounded-2xl p-6">
+              <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-[#FFF0BA]/15">
+                <span className="material-symbols-outlined text-[#FFF0BA]">badge</span>
+                <h3 className="text-lg font-bold text-[#FFF0BA] tracking-tight">Personal Information</h3>
               </div>
 
               <form onSubmit={handleSaveInfo} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#FFFACD]/60 mb-1.5 uppercase tracking-widest">
+                    <label htmlFor="profile-fullname" className="block text-xs font-semibold text-[#FFF0BA]/80 mb-1.5">
                       Full Name
                     </label>
                     <input
+                      id="profile-fullname"
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
-                      className="w-full px-3.5 py-2.5 bg-[#140303] border border-[#FFFACD]/20 rounded-xl text-xs text-[#FFFACD] focus:border-[#B81104] focus:ring-1 focus:ring-[#B81104]/50 outline-none transition-all"
+                      className="w-full px-3.5 py-2.5 bg-[#111808] border border-[#FFF0BA]/25 rounded-xl text-xs text-[#FFF0BA] focus:border-[#FFF0BA] outline-none transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-[#FFFACD]/60 mb-1.5 uppercase tracking-widest">
-                      Email (Cloud Auth)
+                    <label htmlFor="profile-email" className="block text-xs font-semibold text-[#FFF0BA]/80 mb-1.5">
+                      Academic Email
                     </label>
                     <input
+                      id="profile-email"
                       type="email"
                       value={email}
-                      disabled
-                      className="w-full px-3.5 py-2.5 bg-[#140303]/50 border border-[#FFFACD]/10 rounded-xl text-xs text-[#FFFACD]/50 outline-none cursor-not-allowed font-mono"
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full px-3.5 py-2.5 bg-[#111808] border border-[#FFF0BA]/25 rounded-xl text-xs text-[#FFF0BA] focus:border-[#FFF0BA] outline-none font-mono transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#FFFACD]/60 mb-1.5 uppercase tracking-widest">
+                  <label htmlFor="profile-major" className="block text-xs font-semibold text-[#FFF0BA]/80 mb-1.5">
                     Academic Major & Specialization
                   </label>
                   <input
+                    id="profile-major"
                     type="text"
                     value={major}
                     onChange={(e) => setMajor(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#140303] border border-[#FFFACD]/20 rounded-xl text-xs text-[#FFFACD] focus:border-[#B81104] focus:ring-1 focus:ring-[#B81104]/50 outline-none transition-all"
+                    className="w-full px-3.5 py-2.5 bg-[#111808] border border-[#FFF0BA]/25 rounded-xl text-xs text-[#FFF0BA] focus:border-[#FFF0BA] outline-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#FFFACD]/60 mb-1.5 uppercase tracking-widest">
+                  <label htmlFor="profile-bio" className="block text-xs font-semibold text-[#FFF0BA]/80 mb-1.5">
                     Academic Bio & Focus Areas
                   </label>
                   <textarea
+                    id="profile-bio"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     rows={3}
-                    placeholder="Focusing on distributed systems and computational biology..."
-                    className="w-full p-3 bg-[#140303] border border-[#FFFACD]/20 rounded-xl text-xs text-[#FFFACD] focus:border-[#B81104] focus:ring-1 focus:ring-[#B81104]/50 outline-none transition-all resize-none"
+                    placeholder="Focusing on distributed systems and computational mathematics..."
+                    className="w-full p-3 bg-[#111808] border border-[#FFF0BA]/25 rounded-xl text-xs text-[#FFF0BA] focus:border-[#FFF0BA] outline-none transition-all resize-none"
                   />
                 </div>
 
@@ -190,7 +192,7 @@ export const ProfileScreen: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-[#B81104] to-[#8E0D03] text-[#FFFACD] hover:brightness-110 shadow-lg shadow-[#B81104]/40 border border-[#FFFACD]/30 transition-all cursor-pointer disabled:opacity-50"
+                    className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#FFF0BA] text-[#111808] hover:bg-[#FFF6D6] shadow-sm transition-all cursor-pointer disabled:opacity-50"
                   >
                     {isSaving ? 'Saving...' : 'Save Profile Changes'}
                   </button>
@@ -199,15 +201,15 @@ export const ProfileScreen: React.FC = () => {
             </div>
 
             {/* Account Actions */}
-            <div className="bg-[#1C0606] border border-[#FFFACD]/15 rounded-2xl p-6 shadow-2xl flex items-center justify-between">
+            <div className="bg-[#18220C] border border-[#FFF0BA]/15 rounded-2xl p-6 flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-semibold text-[#FFFACD]">Sign Out of Session</h4>
-                <p className="text-xs text-[#FFFACD]/50 mt-0.5">End your active cloud session on this device.</p>
+                <h4 className="text-sm font-bold text-[#FFF0BA]">Sign Out of Workspace</h4>
+                <p className="text-xs text-[#FFF0BA]/65 mt-0.5">Return to the sign-in screen.</p>
               </div>
               <button
                 type="button"
                 onClick={logout}
-                className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider border border-[#B81104] text-[#B81104] hover:bg-[#B81104] hover:text-[#FFFACD] transition-all cursor-pointer"
+                className="px-5 py-2 rounded-xl text-xs font-bold border border-[#FFF0BA]/30 text-[#FFF0BA] hover:bg-[#FFF0BA] hover:text-[#111808] transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 Sign Out
               </button>

@@ -63,7 +63,6 @@ export const AddTaskModal: React.FC = () => {
       subjectTag: defaultSubject,
     });
 
-    // Reset & close
     setIsSubmitting(false);
     setTitle('');
     setCategory('study');
@@ -76,21 +75,25 @@ export const AddTaskModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
       onClick={(e) => {
         if (e.target === e.currentTarget) setIsAddTaskModalOpen(false);
       }}
     >
-      <div className="bg-[#1C0606] text-[#FFFACD] w-full max-w-lg rounded-2xl shadow-2xl border border-[#FFFACD]/20 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-        {/* Modal Header with Milano Red Accent */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-[#FFFACD]/15 bg-[#250807]">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#B81104]"></span>
-            <h3 className="font-serif text-xl text-[#FFFACD] tracking-wide font-normal">New Academic Task</h3>
-          </div>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-task-modal-title"
+        className="bg-[#18220C] text-[#FFF0BA] w-full max-w-lg rounded-2xl shadow-2xl border border-[#FFF0BA]/25 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+      >
+        {/* Modal Header */}
+        <div className="flex justify-between items-center px-6 py-4 border-b border-[#FFF0BA]/15 bg-[#111808]">
+          <h3 id="add-task-modal-title" className="text-lg font-bold text-[#FFF0BA] tracking-tight">
+            New Academic Task
+          </h3>
           <button
             onClick={() => setIsAddTaskModalOpen(false)}
-            className="p-1.5 text-[#FFFACD]/50 hover:text-[#FFFACD] hover:bg-[#FFFACD]/10 rounded-full transition-colors cursor-pointer"
+            className="p-1.5 text-[#FFF0BA]/60 hover:text-[#FFF0BA] hover:bg-[#FFF0BA]/10 rounded-lg transition-colors cursor-pointer"
             type="button"
             aria-label="Close modal"
           >
@@ -100,116 +103,122 @@ export const AddTaskModal: React.FC = () => {
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="flex flex-col">
-          <div className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh] font-syne">
+          <div className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh]">
             {/* Title Input */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold text-[#FFFACD]/60 uppercase tracking-widest">
+              <label htmlFor="task-title-input" className="text-xs font-semibold text-[#FFF0BA]/80">
                 Task Title
               </label>
               <input
+                id="task-title-input"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 placeholder="e.g., Complete Differential Equations Problem Set"
-                className="w-full px-3.5 py-2.5 bg-[#140303] border border-[#FFFACD]/20 focus:border-[#B81104] focus:ring-1 focus:ring-[#B81104]/40 rounded-xl text-xs text-[#FFFACD] outline-none transition-all placeholder:text-[#FFFACD]/30"
+                className="w-full px-3.5 py-2.5 bg-[#111808] border border-[#FFF0BA]/25 focus:border-[#FFF0BA] rounded-xl text-xs text-[#FFF0BA] outline-none transition-all placeholder:text-[#FFF0BA]/35"
               />
             </div>
 
             {/* Category & Priority Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold text-[#FFFACD]/60 uppercase tracking-widest">
+                <label htmlFor="task-category-select" className="text-xs font-semibold text-[#FFF0BA]/80">
                   Category
                 </label>
                 <select
+                  id="task-category-select"
                   value={category}
                   onChange={(e) => setCategory(e.target.value as TaskCategory)}
-                  className="w-full px-3.5 py-2.5 bg-[#140303] border border-[#FFFACD]/20 focus:border-[#B81104] focus:ring-1 focus:ring-[#B81104]/40 rounded-xl text-xs text-[#FFFACD] outline-none transition-all cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-[#111808] border border-[#FFF0BA]/25 focus:border-[#FFF0BA] rounded-xl text-xs text-[#FFF0BA] outline-none transition-all cursor-pointer"
                 >
-                  <option value="study" className="bg-[#1C0606] text-[#FFFACD]">Study / Lecture</option>
-                  <option value="coding" className="bg-[#1C0606] text-[#FFFACD]">Coding / Lab</option>
-                  <option value="assignment" className="bg-[#1C0606] text-[#FFFACD]">Assignment</option>
-                  <option value="project" className="bg-[#1C0606] text-[#FFFACD]">Project</option>
-                  <option value="personal" className="bg-[#1C0606] text-[#FFFACD]">Personal / Reading</option>
-                  <option value="other" className="bg-[#1C0606] text-[#FFFACD]">Other</option>
+                  <option value="study" className="bg-[#111808] text-[#FFF0BA]">Study / Lecture</option>
+                  <option value="coding" className="bg-[#111808] text-[#FFF0BA]">Coding / Lab</option>
+                  <option value="assignment" className="bg-[#111808] text-[#FFF0BA]">Assignment</option>
+                  <option value="project" className="bg-[#111808] text-[#FFF0BA]">Project</option>
+                  <option value="personal" className="bg-[#111808] text-[#FFF0BA]">Personal / Reading</option>
+                  <option value="other" className="bg-[#111808] text-[#FFF0BA]">Other</option>
                 </select>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-semibold text-[#FFFACD]/60 uppercase tracking-widest">
+                <label htmlFor="task-priority-select" className="text-xs font-semibold text-[#FFF0BA]/80">
                   Priority
                 </label>
                 <select
+                  id="task-priority-select"
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                  className="w-full px-3.5 py-2.5 bg-[#140303] border border-[#FFFACD]/20 focus:border-[#B81104] focus:ring-1 focus:ring-[#B81104]/40 rounded-xl text-xs text-[#FFFACD] outline-none transition-all cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-[#111808] border border-[#FFF0BA]/25 focus:border-[#FFF0BA] rounded-xl text-xs text-[#FFF0BA] outline-none transition-all cursor-pointer"
                 >
-                  <option value="high" className="bg-[#1C0606] text-[#FFFACD]">High Priority</option>
-                  <option value="medium" className="bg-[#1C0606] text-[#FFFACD]">Medium Priority</option>
-                  <option value="low" className="bg-[#1C0606] text-[#FFFACD]">Low Priority</option>
-                  <option value="none" className="bg-[#1C0606] text-[#FFFACD]">None</option>
+                  <option value="high" className="bg-[#111808] text-[#FFF0BA]">High Priority</option>
+                  <option value="medium" className="bg-[#111808] text-[#FFF0BA]">Medium Priority</option>
+                  <option value="low" className="bg-[#111808] text-[#FFF0BA]">Low Priority</option>
+                  <option value="none" className="bg-[#111808] text-[#FFF0BA]">None</option>
                 </select>
               </div>
             </div>
 
             {/* Subject / Course Tag */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold text-[#FFFACD]/60 uppercase tracking-widest">
+              <label htmlFor="task-subject-input" className="text-xs font-semibold text-[#FFF0BA]/80">
                 Course / Subject Tag
               </label>
               <input
+                id="task-subject-input"
                 type="text"
                 value={subjectTag}
                 onChange={(e) => setSubjectTag(e.target.value)}
-                placeholder="e.g., Math, Physics, CS 301, History"
-                className="w-full px-3.5 py-2.5 bg-[#140303] border border-[#FFFACD]/20 focus:border-[#B81104] focus:ring-1 focus:ring-[#B81104]/40 rounded-xl text-xs text-[#FFFACD] outline-none transition-all placeholder:text-[#FFFACD]/30"
+                placeholder="e.g., MATH 304, CS 412, History"
+                className="w-full px-3.5 py-2.5 bg-[#111808] border border-[#FFF0BA]/25 focus:border-[#FFF0BA] rounded-xl text-xs text-[#FFF0BA] outline-none transition-all placeholder:text-[#FFF0BA]/35"
               />
             </div>
 
             {/* Due Date & Time */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold text-[#FFFACD]/60 uppercase tracking-widest">
+              <label htmlFor="task-due-input" className="text-xs font-semibold text-[#FFF0BA]/80">
                 Due Date & Time
               </label>
               <input
+                id="task-due-input"
                 type="datetime-local"
                 value={dueDateTime}
                 onChange={(e) => setDueDateTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#140303] border border-[#FFFACD]/20 focus:border-[#B81104] focus:ring-1 focus:ring-[#B81104]/40 rounded-xl text-xs text-[#FFFACD] outline-none transition-all [color-scheme:dark]"
+                className="w-full px-3.5 py-2.5 bg-[#111808] border border-[#FFF0BA]/25 focus:border-[#FFF0BA] rounded-xl text-xs text-[#FFF0BA] outline-none transition-all [color-scheme:dark]"
               />
             </div>
 
             {/* Notes */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold text-[#FFFACD]/60 uppercase tracking-widest">
+              <label htmlFor="task-notes-input" className="text-xs font-semibold text-[#FFF0BA]/80">
                 Notes (Optional)
               </label>
               <textarea
+                id="task-notes-input"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 placeholder="Add problem references, chapter numbers, or specific requirements..."
-                className="w-full p-3 bg-[#140303] border border-[#FFFACD]/20 focus:border-[#B81104] focus:ring-1 focus:ring-[#B81104]/40 rounded-xl text-xs text-[#FFFACD] outline-none transition-all placeholder:text-[#FFFACD]/30 resize-none"
+                className="w-full p-3 bg-[#111808] border border-[#FFF0BA]/25 focus:border-[#FFF0BA] rounded-xl text-xs text-[#FFF0BA] outline-none transition-all placeholder:text-[#FFF0BA]/35 resize-none"
               />
             </div>
           </div>
 
           {/* Modal Footer */}
-          <div className="px-6 py-4 border-t border-[#FFFACD]/15 bg-[#250807] flex justify-end gap-3 font-syne">
+          <div className="px-6 py-4 border-t border-[#FFF0BA]/15 bg-[#111808] flex justify-end gap-3">
             <button
               type="button"
               onClick={() => setIsAddTaskModalOpen(false)}
-              className="px-4 py-2 rounded-full text-xs font-mono border border-[#FFFACD]/20 text-[#FFFACD]/70 hover:text-[#FFFACD] hover:bg-[#FFFACD]/5 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-semibold border border-[#FFF0BA]/25 text-[#FFF0BA]/80 hover:text-[#FFF0BA] hover:bg-[#FFF0BA]/10 transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-[#B81104] to-[#8E0D03] text-[#FFFACD] hover:brightness-110 transition-all shadow-lg shadow-[#B81104]/40 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2 rounded-xl text-xs font-bold bg-[#FFF0BA] text-[#111808] hover:bg-[#FFF6D6] transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
             >
-              {isSubmitting ? 'Saving...' : 'Save to Cloud'}
+              {isSubmitting ? 'Saving...' : 'Save Task'}
             </button>
           </div>
         </form>

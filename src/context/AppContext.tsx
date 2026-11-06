@@ -1,43 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  Screen, 
-  Task, 
-  ActivityLog, 
-  UserProfile, 
-  UserSettings 
+import {
+  Screen,
+  Task,
+  ActivityLog,
+  UserProfile,
+  UserSettings,
+  LocalUser,
 } from '../types';
-import { 
-  auth, 
-  db, 
-  googleProvider, 
-  signInWithPopup, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  User,
-  doc,
-  setDoc,
-  getDoc,
-  collection,
-  onSnapshot,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy
-} from '../lib/firebase';
 
 interface AppContextType {
   currentScreen: Screen;
   setCurrentScreen: (screen: Screen) => void;
-  currentUser: User | null;
+  currentUser: LocalUser | null;
   isAuthenticated: boolean;
-  isLoadingAuth: boolean;
-  isLoadingData: boolean;
   authError: string | null;
   setAuthError: (err: string | null) => void;
-  loginWithGoogle: () => Promise<boolean>;
   loginWithEmail: (email: string, pass: string) => Promise<boolean>;
   registerWithEmail: (email: string, pass: string, fullName: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -61,10 +38,35 @@ interface AppContextType {
   showNotificationToast: (msg: string) => void;
 }
 
+const STORAGE_KEYS = {
+  USER: 'studentflow_user_v2',
+  ACCOUNTS: 'studentflow_accounts_v2',
+  TASKS: 'studentflow_tasks_v2',
+  ACTIVITIES: 'studentflow_activities_v2',
+  PROFILE: 'studentflow_profile_v2',
+  SETTINGS: 'studentflow_settings_v2',
+};
+
+const LEGACY_KEYS = [
+  'studentflow_user_v1',
+  'studentflow_accounts_v1',
+  'studentflow_tasks_v1',
+  'studentflow_activities_v1',
+  'studentflow_profile_v1',
+  'studentflow_settings_v1',
+];
+
+const defaultUser: LocalUser = {
+  id: 'local-user',
+  email: '',
+  displayName: 'Scholar',
+};
+
 const defaultProfile: UserProfile = {
   fullName: '',
   email: '',
-  bio: 'Academic achiever passionate about structured learning.',
+  major: '',
+  bio: '',
   memberSince: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
   dailyGoalHours: 4,
   lifetimeTasksCompleted: 0,
@@ -78,390 +80,302 @@ const defaultSettings: UserSettings = {
   autoArchive: false,
 };
 
+interface StoredAccount {
+  email: string;
+  password: string;
+  fullName: string;
+}
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  useEffect(() => {
+    try {
+      LEGACY_KEYS.forEach((k) => localStorage.removeItem(k));
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
+  const [currentUser, setCurrentUser] = useState<LocalUser | null>(() =>
+    loadFromStorage<LocalUser | null>(STORAGE_KEYS.USER, defaultUser)
+  );
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard');
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
-  const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [activities, setActivities] = useState<ActivityLog[]>([]);
-  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
-  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+  const [tasks, setTasks] = useState<Task[]>(() =>
+    loadFromStorage<Task[]>(STORAGE_KEYS.TASKS, [])
+  );
+  const [activities, setActivities] = useState<ActivityLog[]>(() =>
+    loadFromStorage<ActivityLog[]>(STORAGE_KEYS.ACTIVITIES, [])
+  );
+  const [profile, setProfile] = useState<UserProfile>(() =>
+    loadFromStorage<UserProfile>(STORAGE_KEYS.PROFILE, defaultProfile)
+  );
+  const [settings, setSettings] = useState<UserSettings>(() =>
+    loadFromStorage<UserSettings>(STORAGE_KEYS.SETTINGS, defaultSettings)
+  );
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState<boolean>(false);
   const [notificationToast, setNotificationToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(currentUser));
+    } catch {
+      // ignore storage errors
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+    } catch {
+      // ignore
+    }
+  }, [tasks]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(activities));
+    } catch {
+      // ignore
+    }
+  }, [activities]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+    } catch {
+      // ignore
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    } catch {
+      // ignore
+    }
+  }, [settings]);
 
   const showNotificationToast = (msg: string) => {
     setNotificationToast(msg);
     setTimeout(() => setNotificationToast(null), 3500);
   };
 
-  // 1. Listen for Firebase Auth State Changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      setIsLoadingAuth(false);
-
-      if (user) {
-        setAuthError(null);
-        // Load or create initial user profile in Firestore
-        try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userSnap = await getDoc(userDocRef);
-
-          if (userSnap.exists()) {
-            const data = userSnap.data() as UserProfile;
-            setProfile(data);
-          } else {
-            const newProfile: UserProfile = {
-              fullName: user.displayName || user.email?.split('@')[0] || 'Student',
-              email: user.email || '',
-              bio: 'Focused on academic excellence and daily progress.',
-              memberSince: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-              avatarUrl: user.photoURL || undefined,
-              dailyGoalHours: 4,
-              lifetimeTasksCompleted: 0,
-              lifetimeActivitiesLogged: 0,
-            };
-            await setDoc(userDocRef, newProfile);
-            setProfile(newProfile);
-          }
-        } catch (err: any) {
-          console.error('Error fetching user document:', err);
-        }
-
-        // If currently on login or register screen, transition to dashboard
-        setCurrentScreen((prev) => (prev === 'login' || prev === 'register' ? 'dashboard' : prev));
-      } else {
-        // Reset state on sign out
-        setTasks([]);
-        setActivities([]);
-        setProfile(defaultProfile);
-        setSettings(defaultSettings);
-        setCurrentScreen('login');
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // 2. Real-time Firestore Listeners for Tasks, Activities, and Settings
-  useEffect(() => {
-    if (!currentUser) return;
-
-    setIsLoadingData(true);
-    const uid = currentUser.uid;
-
-    // Listen to user's Tasks
-    const tasksRef = collection(db, 'users', uid, 'tasks');
-    const tasksQuery = query(tasksRef, orderBy('createdAt', 'desc'));
-    const unsubTasks = onSnapshot(
-      tasksQuery,
-      (snapshot) => {
-        const loadedTasks: Task[] = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<Task, 'id'>),
-        }));
-        setTasks(loadedTasks);
-        setIsLoadingData(false);
-      },
-      (err) => {
-        console.error('Firestore Tasks error:', err);
-        setIsLoadingData(false);
-      }
-    );
-
-    // Listen to user's Activities
-    const activitiesRef = collection(db, 'users', uid, 'activities');
-    const activitiesQuery = query(activitiesRef, orderBy('createdAt', 'desc'));
-    const unsubActivities = onSnapshot(
-      activitiesQuery,
-      (snapshot) => {
-        const loadedActivities: ActivityLog[] = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<ActivityLog, 'id'>),
-        }));
-        setActivities(loadedActivities);
-      },
-      (err) => {
-        console.error('Firestore Activities error:', err);
-      }
-    );
-
-    // Listen to User Profile updates
-    const userDocRef = doc(db, 'users', uid);
-    const unsubProfile = onSnapshot(userDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setProfile(docSnap.data() as UserProfile);
-      }
-    });
-
-    // Listen to Settings
-    const settingsDocRef = doc(db, 'users', uid, 'settings', 'preferences');
-    const unsubSettings = onSnapshot(settingsDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setSettings(docSnap.data() as UserSettings);
-      }
-    });
-
-    return () => {
-      unsubTasks();
-      unsubActivities();
-      unsubProfile();
-      unsubSettings();
-    };
-  }, [currentUser]);
-
-  // Auth Functions
-  const loginWithGoogle = async (): Promise<boolean> => {
-    setAuthError(null);
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      if (user) {
-        // Ensure user document exists in Firestore
-        const userDocRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userDocRef);
-        if (!userSnap.exists()) {
-          const newProfile: UserProfile = {
-            fullName: user.displayName || 'Student',
-            email: user.email || '',
-            bio: 'Academic achiever passionate about structured learning.',
-            memberSince: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-            avatarUrl: user.photoURL || undefined,
-            dailyGoalHours: 4,
-            lifetimeTasksCompleted: 0,
-            lifetimeActivitiesLogged: 0,
-          };
-          await setDoc(userDocRef, newProfile);
-          setProfile(newProfile);
-        }
-        showNotificationToast(`Welcome back, ${user.displayName || 'Scholar'}!`);
-        setCurrentScreen('dashboard');
-        return true;
-      }
-      return false;
-    } catch (err: any) {
-      console.error('Google Sign-In Error:', err);
-      let message = 'Failed to sign in with Google. Please try again.';
-      if (err.code === 'auth/unauthorized-domain') {
-        message = 'This domain is not authorized for sign-in. If running locally, ensure "localhost" is added to Firebase Console → Authentication → Authorized Domains.';
-      } else if (err.code === 'auth/popup-blocked') {
-        message = 'Sign-in popup was blocked by your browser. Please allow popups for this site and try again.';
-      } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        message = 'Sign-in was cancelled. Please try again.';
-      } else if (err.code === 'auth/network-request-failed') {
-        message = 'Network error. Please check your internet connection and try again.';
-      }
-      setAuthError(message);
-      return false;
-    }
-  };
-
   const loginWithEmail = async (email: string, pass: string): Promise<boolean> => {
     setAuthError(null);
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      showNotificationToast('Signed in successfully');
-      setCurrentScreen('dashboard');
-      return true;
-    } catch (err: any) {
-      console.error('Email Sign-In Error:', err);
-      let message = 'Invalid email or password';
-      if (err.code === 'auth/user-not-found') message = 'No account found with this email.';
-      if (err.code === 'auth/wrong-password') message = 'Incorrect password.';
-      if (err.code === 'auth/invalid-email') message = 'Please enter a valid email address.';
-      if (err.code === 'auth/invalid-credential') message = 'Invalid credentials. Please verify your email and password.';
-      setAuthError(message);
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      setAuthError('Please enter a valid email address.');
       return false;
     }
+    if (pass.length < 4) {
+      setAuthError('Please enter your password (at least 4 characters).');
+      return false;
+    }
+
+    const accounts = loadFromStorage<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS, []);
+    const matched = accounts.find((a) => a.email.toLowerCase() === trimmedEmail);
+    if (matched && matched.password !== pass) {
+      setAuthError('Incorrect password for this account.');
+      return false;
+    }
+
+    const displayName =
+      matched?.fullName ||
+      profile.fullName ||
+      trimmedEmail
+        .split('@')[0]
+        .replace(/[._-]/g, ' ')
+        .replace(/\b\w/g, (l) => l.toUpperCase());
+
+    const loggedInUser: LocalUser = {
+      id: `user-${Date.now()}`,
+      email: trimmedEmail,
+      displayName,
+    };
+
+    setCurrentUser(loggedInUser);
+    setProfile((prev) => ({
+      ...prev,
+      fullName: displayName,
+      email: trimmedEmail,
+    }));
+    showNotificationToast(`Welcome, ${displayName}!`);
+    setCurrentScreen('dashboard');
+    return true;
   };
 
   const registerWithEmail = async (email: string, pass: string, fullName: string): Promise<boolean> => {
     setAuthError(null);
-    try {
-      const res = await createUserWithEmailAndPassword(auth, email, pass);
-      const user = res.user;
-      const initialProfile: UserProfile = {
-        fullName: fullName || email.split('@')[0],
-        email: user.email || email,
-        bio: 'Academic achiever passionate about structured learning.',
-        memberSince: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        dailyGoalHours: 4,
-        lifetimeTasksCompleted: 0,
-        lifetimeActivitiesLogged: 0,
-      };
-      await setDoc(doc(db, 'users', user.uid), initialProfile);
-      setProfile(initialProfile);
-      showNotificationToast('Account created successfully!');
-      setCurrentScreen('dashboard');
-      return true;
-    } catch (err: any) {
-      console.error('Registration Error:', err);
-      let message = 'Failed to register account.';
-      if (err.code === 'auth/email-already-in-use') message = 'This email is already registered. Please sign in.';
-      if (err.code === 'auth/weak-password') message = 'Password should be at least 6 characters.';
-      if (err.code === 'auth/invalid-email') message = 'Please enter a valid email address.';
-      setAuthError(message);
+    const trimmedEmail = email.trim().toLowerCase();
+    const cleanName = fullName.trim() || trimmedEmail.split('@')[0];
+
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      setAuthError('Please enter a valid email address.');
       return false;
     }
+    if (pass.length < 6) {
+      setAuthError('Password must be at least 6 characters.');
+      return false;
+    }
+
+    const accounts = loadFromStorage<StoredAccount[]>(STORAGE_KEYS.ACCOUNTS, []);
+    const existingIndex = accounts.findIndex((a) => a.email.toLowerCase() === trimmedEmail);
+    const newAccount: StoredAccount = {
+      email: trimmedEmail,
+      password: pass,
+      fullName: cleanName,
+    };
+
+    if (existingIndex >= 0) {
+      accounts[existingIndex] = newAccount;
+    } else {
+      accounts.push(newAccount);
+    }
+
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+    } catch {
+      // ignore
+    }
+
+    const newUser: LocalUser = {
+      id: `user-${Date.now()}`,
+      email: trimmedEmail,
+      displayName: cleanName,
+    };
+
+    const newProfile: UserProfile = {
+      fullName: cleanName,
+      email: trimmedEmail,
+      major: '',
+      bio: '',
+      memberSince: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      dailyGoalHours: 4,
+      lifetimeTasksCompleted: 0,
+      lifetimeActivitiesLogged: 0,
+    };
+
+    setCurrentUser(newUser);
+    setProfile(newProfile);
+    setTasks([]);
+    setActivities([]);
+    showNotificationToast('Account created successfully!');
+    setCurrentScreen('dashboard');
+    return true;
   };
 
   const logout = async () => {
-    try {
-      await signOut(auth);
-      showNotificationToast('Logged out');
-      setCurrentScreen('login');
-    } catch (err) {
-      console.error('Sign Out Error:', err);
-    }
+    setCurrentUser(null);
+    showNotificationToast('Signed out of workspace');
+    setCurrentScreen('login');
   };
 
-  // Task Operations with Real Firestore
   const addTask = async (newTask: Omit<Task, 'id'>) => {
-    if (!currentUser) {
-      showNotificationToast('Please sign in to add tasks');
-      return;
-    }
-    try {
-      const taskData = {
-        ...newTask,
-        completed: false,
-        userId: currentUser.uid,
-        createdAt: new Date().toISOString(),
-      };
-      await addDoc(collection(db, 'users', currentUser.uid, 'tasks'), taskData);
-      showNotificationToast(`Task "${newTask.title}" created!`);
-    } catch (err: any) {
-      console.error('Error adding task:', err);
-      showNotificationToast('Failed to save task to database.');
-    }
+    const created: Task = {
+      ...newTask,
+      id: `task-${Date.now()}`,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    };
+    setTasks((prev) => [created, ...prev]);
+    showNotificationToast(`Task "${newTask.title}" added!`);
   };
 
   const toggleTask = async (id: string) => {
-    if (!currentUser) return;
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return;
-
-    const nextCompleted = !task.completed;
-    try {
-      const taskRef = doc(db, 'users', currentUser.uid, 'tasks', id);
-      await updateDoc(taskRef, {
-        completed: nextCompleted,
-        completedAt: nextCompleted ? new Date().toISOString() : null,
-      });
-
-      // Update lifetime stats in profile
-      const userRef = doc(db, 'users', currentUser.uid);
-      if (nextCompleted) {
-        await updateDoc(userRef, {
-          lifetimeTasksCompleted: (profile.lifetimeTasksCompleted || 0) + 1,
-        });
-      } else {
-        const newCount = Math.max(0, (profile.lifetimeTasksCompleted || 0) - 1);
-        await updateDoc(userRef, {
-          lifetimeTasksCompleted: newCount,
-        });
-      }
-    } catch (err) {
-      console.error('Error updating task:', err);
-    }
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const nextCompleted = !t.completed;
+        setProfile((p) => ({
+          ...p,
+          lifetimeTasksCompleted: Math.max(
+            0,
+            (p.lifetimeTasksCompleted || 0) + (nextCompleted ? 1 : -1)
+          ),
+        }));
+        return {
+          ...t,
+          completed: nextCompleted,
+          completedAt: nextCompleted ? new Date().toISOString() : null,
+        };
+      })
+    );
   };
 
   const deleteTask = async (id: string) => {
-    if (!currentUser) return;
-    try {
-      await deleteDoc(doc(db, 'users', currentUser.uid, 'tasks', id));
-      showNotificationToast('Task deleted');
-    } catch (err) {
-      console.error('Error deleting task:', err);
-    }
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    showNotificationToast('Task removed');
   };
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
-    if (!currentUser) return;
-    try {
-      await updateDoc(doc(db, 'users', currentUser.uid, 'tasks', id), updates);
-    } catch (err) {
-      console.error('Error updating task:', err);
-    }
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
   };
 
-  // Activity Operations with Real Firestore
   const addActivity = async (newAct: Omit<ActivityLog, 'id'>) => {
-    if (!currentUser) {
-      showNotificationToast('Please sign in to log activity');
-      return;
-    }
-    try {
-      const actData = {
-        ...newAct,
-        completed: true,
-        userId: currentUser.uid,
-        createdAt: new Date().toISOString(),
-      };
-      await addDoc(collection(db, 'users', currentUser.uid, 'activities'), actData);
-
-      // Increment logged activities counter
-      const userRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userRef, {
-        lifetimeActivitiesLogged: (profile.lifetimeActivitiesLogged || 0) + 1,
-      });
-
-      showNotificationToast(`Logged ${newAct.durationFormatted} for ${newAct.title}!`);
-    } catch (err) {
-      console.error('Error logging activity:', err);
-      showNotificationToast('Failed to save activity log.');
-    }
+    const created: ActivityLog = {
+      ...newAct,
+      id: `act-${Date.now()}`,
+      completed: true,
+      createdAt: new Date().toISOString(),
+    };
+    setActivities((prev) => [created, ...prev]);
+    setProfile((p) => ({
+      ...p,
+      lifetimeActivitiesLogged: (p.lifetimeActivitiesLogged || 0) + 1,
+    }));
+    showNotificationToast(`Logged ${newAct.durationFormatted} for ${newAct.title}!`);
   };
 
   const deleteActivity = async (id: string) => {
-    if (!currentUser) return;
-    try {
-      await deleteDoc(doc(db, 'users', currentUser.uid, 'activities', id));
-      showNotificationToast('Activity removed');
-    } catch (err) {
-      console.error('Error deleting activity:', err);
-    }
+    setActivities((prev) => prev.filter((a) => a.id !== id));
+    showNotificationToast('Activity entry removed');
   };
 
-  // Profile and Settings Updates
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!currentUser) return;
-    try {
-      const userRef = doc(db, 'users', currentUser.uid);
-      await setDoc(userRef, updates, { merge: true });
-      showNotificationToast('Profile updated');
-    } catch (err) {
-      console.error('Error updating profile:', err);
+    setProfile((prev) => ({ ...prev, ...updates }));
+    if (updates.fullName && currentUser) {
+      setCurrentUser({
+        ...currentUser,
+        displayName: updates.fullName,
+        email: updates.email !== undefined ? updates.email : currentUser.email,
+      });
     }
+    showNotificationToast('Profile updated');
   };
 
   const updateSettings = async (updates: Partial<UserSettings>) => {
-    if (!currentUser) return;
-    try {
-      const settingsRef = doc(db, 'users', currentUser.uid, 'settings', 'preferences');
-      await setDoc(settingsRef, updates, { merge: true });
-      showNotificationToast('Preferences saved');
-    } catch (err) {
-      console.error('Error saving settings:', err);
+    setSettings((prev) => ({ ...prev, ...updates }));
+    if (updates.dailyGoalHours) {
+      setProfile((prev) => ({ ...prev, dailyGoalHours: updates.dailyGoalHours }));
     }
+    showNotificationToast('Preferences saved');
   };
 
-  // Real Dynamic Notifications based on user tasks
   const pendingTasks = tasks.filter((t) => !t.completed);
   const dynamicNotifications: string[] = [];
   if (pendingTasks.length > 0) {
-    dynamicNotifications.push(`You have ${pendingTasks.length} pending task${pendingTasks.length > 1 ? 's' : ''} in your queue.`);
+    dynamicNotifications.push(
+      `You have ${pendingTasks.length} pending task${pendingTasks.length > 1 ? 's' : ''} in your queue.`
+    );
     const urgentTask = pendingTasks.find((t) => t.priority === 'high');
     if (urgentTask) {
       dynamicNotifications.push(`High Priority: "${urgentTask.title}" (${urgentTask.dueDate})`);
     }
-  } else {
+  } else if (tasks.length > 0) {
     dynamicNotifications.push('All tasks completed! Ready for your next study goal.');
   }
   if (activities.length > 0) {
@@ -477,11 +391,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setCurrentScreen,
         currentUser,
         isAuthenticated: !!currentUser,
-        isLoadingAuth,
-        isLoadingData,
         authError,
         setAuthError,
-        loginWithGoogle,
         loginWithEmail,
         registerWithEmail,
         logout,
@@ -507,9 +418,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     >
       {children}
       {notificationToast && (
-        <div className="fixed bottom-20 md:bottom-6 right-6 z-50 bg-[#1C0606] text-[#FFFACD] px-5 py-3.5 rounded-xl shadow-2xl border border-[#B81104]/40 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <span className="material-symbols-outlined text-[#B81104] text-[20px]">check_circle</span>
-          <span className="font-medium text-xs tracking-wide text-[#FFFACD]">{notificationToast}</span>
+        <div className="fixed bottom-20 md:bottom-6 right-6 z-50 bg-[#FFF0BA] text-[#111808] px-5 py-3.5 rounded-xl shadow-2xl border border-[#111808]/20 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <span className="material-symbols-outlined text-[#111808] text-[20px]">check_circle</span>
+          <span className="font-semibold text-xs tracking-wide text-[#111808]">{notificationToast}</span>
         </div>
       )}
     </AppContext.Provider>

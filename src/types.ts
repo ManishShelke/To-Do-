@@ -3,6 +3,12 @@ export type Screen = 'dashboard' | 'tasks' | 'activities' | 'analytics' | 'profi
 export type TaskCategory = 'study' | 'coding' | 'assignment' | 'project' | 'personal' | 'other';
 export type TaskPriority = 'high' | 'medium' | 'low' | 'none';
 
+export interface LocalUser {
+  id: string;
+  email: string;
+  displayName: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -13,7 +19,6 @@ export interface Task {
   completed: boolean;
   notes?: string;
   subjectTag?: string; // e.g. 'Math', 'History', 'Science', 'Comms'
-  userId?: string;
   createdAt?: string;
   completedAt?: string | null;
 }
@@ -30,7 +35,6 @@ export interface ActivityLog {
   date: string; // YYYY-MM-DD
   note?: string;
   completed?: boolean;
-  userId?: string;
   createdAt?: string;
 }
 

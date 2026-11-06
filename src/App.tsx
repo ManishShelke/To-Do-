@@ -12,33 +12,12 @@ import { ProfileScreen } from './components/screens/ProfileScreen';
 import { Screen } from './types';
 
 const MainLayout: React.FC = () => {
-  const { currentScreen, setCurrentScreen, isAuthenticated, isLoadingAuth } = useApp();
+  const { currentScreen, setCurrentScreen, isAuthenticated } = useApp();
   const [showScreenSwitcher, setShowScreenSwitcher] = useState(false);
 
-  // If Firebase auth is still initializing, show a stylish Milano Red & Lemon Chiffon loader
-  if (isLoadingAuth) {
-    return (
-      <div className="min-h-screen bg-[#120303] text-[#FFFACD] flex flex-col items-center justify-center p-6 selection:bg-[#B81104] selection:text-[#FFFACD]">
-        <div className="relative flex flex-col items-center gap-6">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#B81104] to-[#8E0D03] border border-[#FFFACD]/30 flex items-center justify-center shadow-2xl shadow-[#B81104]/30 animate-pulse">
-            <span className="material-symbols-outlined text-[#FFFACD] text-[32px]">auto_stories</span>
-          </div>
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-serif tracking-[0.25em] text-[#FFFACD] uppercase">StudentFlow</h1>
-            <p className="text-xs font-mono uppercase tracking-widest text-[#FFFACD]/50">Connecting to Cloud Database...</p>
-          </div>
-          <div className="w-48 h-1 bg-[#1C0606] rounded-full overflow-hidden border border-[#FFFACD]/10">
-            <div className="h-full bg-gradient-to-r from-[#B81104] via-[#FFFACD] to-[#B81104] animate-indeterminate rounded-full"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // If user is on login or register screen or not authenticated
   if (currentScreen === 'login' || (!isAuthenticated && currentScreen !== 'register')) {
     return (
-      <div className="relative min-h-screen flex flex-col bg-[#120303] text-[#FFFACD] selection:bg-[#B81104] selection:text-[#FFFACD]">
+      <div className="relative min-h-screen flex flex-col bg-[#111808] text-[#FFF0BA] selection:bg-[#FFF0BA] selection:text-[#111808]">
         <ScreenSwitcherBadge
           currentScreen={currentScreen}
           setCurrentScreen={setCurrentScreen}
@@ -52,7 +31,7 @@ const MainLayout: React.FC = () => {
 
   if (currentScreen === 'register') {
     return (
-      <div className="relative min-h-screen flex flex-col bg-[#120303] text-[#FFFACD] selection:bg-[#B81104] selection:text-[#FFFACD]">
+      <div className="relative min-h-screen flex flex-col bg-[#111808] text-[#FFF0BA] selection:bg-[#FFF0BA] selection:text-[#111808]">
         <ScreenSwitcherBadge
           currentScreen={currentScreen}
           setCurrentScreen={setCurrentScreen}
@@ -90,7 +69,7 @@ const MainLayout: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#120303] text-[#FFFACD] antialiased selection:bg-[#B81104] selection:text-[#FFFACD]">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#111808] text-[#FFF0BA] antialiased selection:bg-[#FFF0BA] selection:text-[#111808]">
       {/* Quick Screen Switcher Badge */}
       <ScreenSwitcherBadge
         currentScreen={currentScreen}
@@ -108,7 +87,7 @@ const MainLayout: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#180404]/95 backdrop-blur-xl border-t border-[#FFFACD]/15 flex items-center justify-around px-2 z-40">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#18220C]/95 backdrop-blur-xl border-t border-[#FFF0BA]/15 flex items-center justify-around px-2 z-40">
         {mobileNavItems.map((item) => {
           const isActive = currentScreen === item.id;
           return (
@@ -116,16 +95,17 @@ const MainLayout: React.FC = () => {
               key={item.id}
               onClick={() => setCurrentScreen(item.id)}
               className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-all ${
-                isActive ? 'text-[#FFFACD] font-bold scale-105' : 'text-[#FFFACD]/40 hover:text-[#FFFACD]/80'
+                isActive ? 'text-[#FFF0BA] font-bold scale-105' : 'text-[#FFF0BA]/50 hover:text-[#FFF0BA]/80'
               }`}
             >
               <span
+                aria-hidden="true"
                 className="material-symbols-outlined text-[20px]"
                 style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
               >
                 {item.icon}
               </span>
-              <span className="text-[10px] tracking-wider uppercase font-syne">{item.label}</span>
+              <span className="text-[10px] tracking-wider uppercase">{item.label}</span>
             </button>
           );
         })}
@@ -161,10 +141,10 @@ const ScreenSwitcherBadge: React.FC<ScreenSwitcherProps> = ({
   ];
 
   return (
-    <div className="fixed top-3 right-3 z-50 flex items-center">
+    <div className="fixed bottom-20 md:bottom-4 right-4 z-40 flex items-center">
       {isOpen ? (
-        <div className="bg-[#1C0606]/95 backdrop-blur-md text-[#FFFACD] p-2.5 rounded-2xl shadow-2xl border border-[#FFFACD]/25 flex flex-wrap items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150 max-w-[95vw]">
-          <span className="text-[10px] font-semibold text-[#FFFACD]/60 px-2 uppercase tracking-widest font-syne">
+        <div className="bg-[#18220C] text-[#FFF0BA] p-2.5 rounded-2xl shadow-2xl border border-[#FFF0BA]/25 flex flex-wrap items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150 max-w-[95vw]">
+          <span className="text-[11px] font-semibold text-[#FFF0BA]/70 px-2">
             View Screen:
           </span>
           {screens.map((s) => (
@@ -174,10 +154,10 @@ const ScreenSwitcherBadge: React.FC<ScreenSwitcherProps> = ({
                 setCurrentScreen(s.id);
                 setIsOpen(false);
               }}
-              className={`px-3 py-1 rounded-full text-xs transition-all font-syne cursor-pointer ${
+              className={`px-3 py-1 rounded-lg text-xs transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 currentScreen === s.id
-                  ? 'bg-[#B81104] text-[#FFFACD] font-bold shadow-md shadow-[#B81104]/30'
-                  : 'bg-[#FFFACD]/10 text-[#FFFACD]/80 hover:bg-[#FFFACD]/20 hover:text-[#FFFACD] border border-[#FFFACD]/10'
+                  ? 'bg-[#FFF0BA] text-[#111808] font-bold shadow-sm'
+                  : 'bg-[#111808] text-[#FFF0BA]/80 hover:bg-[#FFF0BA]/15 hover:text-[#FFF0BA] border border-[#FFF0BA]/15'
               }`}
             >
               {s.label}
@@ -185,21 +165,22 @@ const ScreenSwitcherBadge: React.FC<ScreenSwitcherProps> = ({
           ))}
           <button
             onClick={() => setIsOpen(false)}
-            className="p-1 text-[#FFFACD]/50 hover:text-[#FFFACD] rounded-full ml-1 hover:bg-[#FFFACD]/10 cursor-pointer"
+            className="p-1 text-[#FFF0BA]/60 hover:text-[#FFF0BA] rounded-lg ml-1 hover:bg-[#FFF0BA]/10 cursor-pointer"
             title="Close switcher"
+            aria-label="Close screen switcher"
           >
-            <span className="material-symbols-outlined text-[16px]">close</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-[16px]">close</span>
           </button>
         </div>
       ) : (
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-[#1C0606]/90 hover:bg-[#280B0A] text-[#FFFACD] px-3.5 py-1.5 rounded-full text-[11px] font-medium backdrop-blur-md border border-[#FFFACD]/20 shadow-lg flex items-center gap-2 transition-all cursor-pointer group"
+          className="bg-[#18220C] hover:bg-[#212E11] text-[#FFF0BA] px-3.5 py-2 rounded-xl text-xs font-medium border border-[#FFF0BA]/25 shadow-lg flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0"
           title="Quick switch between screens"
         >
-          <span className="w-2 h-2 rounded-full bg-[#B81104] group-hover:scale-125 transition-transform animate-ping"></span>
-          <span className="hidden sm:inline text-[#FFFACD]/60 font-syne uppercase tracking-wider text-[10px]">Screen:</span>
-          <span className="font-semibold text-[#FFFACD] capitalize tracking-wide font-syne">{currentScreen}</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[15px] text-[#FFF0BA]/70">layers</span>
+          <span className="text-[#FFF0BA]/70">Screen:</span>
+          <span className="font-bold text-[#FFF0BA] capitalize">{currentScreen}</span>
         </button>
       )}
     </div>
